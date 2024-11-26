@@ -9,16 +9,22 @@ function createTimerDisplay() {
         timerElement.style.position = 'fixed';
         timerElement.style.top = '10px';
         timerElement.style.right = '10px';
-        timerElement.style.padding = '10px';
+        timerElement.style.padding = '12px 20px';
         timerElement.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
         timerElement.style.color = 'white';
         timerElement.style.borderRadius = '5px';
+        timerElement.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
+        timerElement.style.fontSize = '16px';
+        timerElement.style.fontWeight = 'bold';
         timerElement.style.zIndex = '9999';
+        timerElement.style.boxShadow = '0 2px 5px rgba(0, 0, 0, 0.2)';
+        timerElement.style.transition = 'opacity 0.3s ease';
+        timerElement.style.userSelect = 'none';
+        timerElement.style.cursor = 'default';
         document.body.appendChild(timerElement);
     }
 }
 
-// Update the timer display with the remaining time
 function updateDisplay(remainingSeconds) {
     if (!timerElement) {
         createTimerDisplay();
@@ -36,7 +42,6 @@ function updateDisplay(remainingSeconds) {
     }
 }
 
-// Remove the timer display
 function removeDisplay() {
     if (timerElement && timerElement.parentNode) {
         timerElement.parentNode.removeChild(timerElement);
@@ -49,69 +54,22 @@ function isCorrectGreenhousePage() {
     return window.location.href.includes('greenhouse.io/applications/review/app_review?');
 }
 
-// Function to start observing for PDF loads
-function startProfileObserver() {
-    // First, check if we're on the correct Greenhouse page
-    if (!isCorrectGreenhousePage()) {
-        return;
-    }
-
-    // Create a new observer instance
-    const observer = new MutationObserver((mutations) => {
-        // Only proceed if we're still on the correct page
-        if (!isCorrectGreenhousePage()) {
-            return;
-        }
-
-        for (const mutation of mutations) {
-            // Check for added nodes
-            for (const node of mutation.addedNodes) {
-                if (node.nodeType === Node.ELEMENT_NODE) {
-                    // Look for elements that indicate a PDF is loaded
-                    const pdfViewer = node.querySelector('.s-pdf-viewer');
-                    if (pdfViewer) {
-                        // Notify background script that a new profile is loaded
-                        chrome.runtime.sendMessage({
-                            action: 'newProfileLoaded'
-                        });
-                        break;
-                    }
-                }
-            }
-        }
-    });
-
-    // Start observing the document with the configured parameters
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
-
-    return observer;
-}
-
-// Initialize the observer when the script loads
+// Initialize when the script loads
 document.addEventListener('DOMContentLoaded', () => {
     if (isCorrectGreenhousePage()) {
-        profileObserver = startProfileObserver();
+        createTimerDisplay();
     }
 });
 
-// Also watch for URL changes using the History API
+// Watch for URL changes using the History API
 let lastUrl = location.href;
 new MutationObserver(() => {
     const url = location.href;
     if (url !== lastUrl) {
         lastUrl = url;
         if (isCorrectGreenhousePage()) {
-            if (!profileObserver) {
-                profileObserver = startProfileObserver();
-            }
+            createTimerDisplay();
         } else {
-            if (profileObserver) {
-                profileObserver.disconnect();
-                profileObserver = null;
-            }
             removeDisplay();
         }
     }

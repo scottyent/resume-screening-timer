@@ -5,6 +5,7 @@ let currentTabId = null;
 const DEFAULT_TIMER_DURATION = 5; // Default duration in minutes
 const URL_PATTERN = /greenhouse\.io\/applications\/review\/app_review\?/; // Updated URL pattern
 
+
 // Helper function to check if a tab is ready for messaging
 async function isTabReady(tabId) {
     try {
@@ -68,6 +69,32 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
         console.error('Error in tab activation:', error);
     }
 });
+
+// Listen for network traffic indicating loaded document to reset the timer
+chrome.webRequest.onCompleted.addListener(
+    async function(details) {
+        // Check if this is a document request from attachment_display.tsx
+        if (details.type === "main_frame" || details.type === "sub_frame" || details.type === "object") {
+            try {
+                // Get the tab info to check if we're on the correct page
+                const tab = await chrome.tabs.get(details.tabId);
+                if (tab.url && URL_PATTERN.test(tab.url)) {
+                    // Reset the timer when a new document is loaded
+                    chrome.storage.local.get(['duration'], (result) => {
+                        const duration = result.duration || DEFAULT_TIMER_DURATION;
+                        startTimer(duration * 60);
+                    });
+                }
+            } catch (error) {
+                console.error('Error handling document request:', error);
+            }
+        }
+    },
+    {
+        urls: ["*://*.greenhouse.io/*"],
+        types: ["main_frame", "sub_frame", "object"]
+    }
+);
 
 // Listen for messages from popup and content script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
