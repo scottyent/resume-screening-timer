@@ -1,5 +1,6 @@
-// Create and manage the timer display element
+// timerDisplay.js
 let timerElement = null;
+let profileObserver = null;
 
 function createTimerDisplay() {
     if (!timerElement) {
@@ -43,6 +44,79 @@ function removeDisplay() {
     }
 }
 
+// Function to check if we're on the correct Greenhouse page
+function isCorrectGreenhousePage() {
+    return window.location.href.includes('greenhouse.io/applications/review/app_review?');
+}
+
+// Function to start observing for PDF loads
+function startProfileObserver() {
+    // First, check if we're on the correct Greenhouse page
+    if (!isCorrectGreenhousePage()) {
+        return;
+    }
+
+    // Create a new observer instance
+    const observer = new MutationObserver((mutations) => {
+        // Only proceed if we're still on the correct page
+        if (!isCorrectGreenhousePage()) {
+            return;
+        }
+
+        for (const mutation of mutations) {
+            // Check for added nodes
+            for (const node of mutation.addedNodes) {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    // Look for elements that indicate a PDF is loaded
+                    const pdfViewer = node.querySelector('.s-pdf-viewer');
+                    if (pdfViewer) {
+                        // Notify background script that a new profile is loaded
+                        chrome.runtime.sendMessage({
+                            action: 'newProfileLoaded'
+                        });
+                        break;
+                    }
+                }
+            }
+        }
+    });
+
+    // Start observing the document with the configured parameters
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+    return observer;
+}
+
+// Initialize the observer when the script loads
+document.addEventListener('DOMContentLoaded', () => {
+    if (isCorrectGreenhousePage()) {
+        profileObserver = startProfileObserver();
+    }
+});
+
+// Also watch for URL changes using the History API
+let lastUrl = location.href;
+new MutationObserver(() => {
+    const url = location.href;
+    if (url !== lastUrl) {
+        lastUrl = url;
+        if (isCorrectGreenhousePage()) {
+            if (!profileObserver) {
+                profileObserver = startProfileObserver();
+            }
+        } else {
+            if (profileObserver) {
+                profileObserver.disconnect();
+                profileObserver = null;
+            }
+            removeDisplay();
+        }
+    }
+}).observe(document, {subtree: true, childList: true});
+
 // Listen for messages from the background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     switch (request.action) {
@@ -58,5 +132,5 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             sendResponse({ status: 'removed' });
             break;
     }
-    return false; // Don't keep the message channel open
+    return true; // Keep the message channel open
 });

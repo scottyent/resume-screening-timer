@@ -3,7 +3,7 @@ let remainingTime = 0;
 let timerInterval = null;
 let currentTabId = null;
 const DEFAULT_TIMER_DURATION = 5; // Default duration in minutes
-const URL_PATTERN = /\/review\/app_review\?/; // URL pattern to match
+const URL_PATTERN = /greenhouse\.io\/applications\/review\/app_review\?/; // Updated URL pattern
 
 // Helper function to check if a tab is ready for messaging
 async function isTabReady(tabId) {
@@ -69,7 +69,7 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
     }
 });
 
-// Listen for messages from popup
+// Listen for messages from popup and content script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     switch (request.action) {
         case 'getTime':
@@ -95,8 +95,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         case 'stop':
             stopTimer();
             break;
+        case 'newProfileLoaded':
+            // Only reset timer if we're on the correct page
+            if (sender.tab && URL_PATTERN.test(sender.tab.url)) {
+                chrome.storage.local.get(['duration'], (result) => {
+                    const duration = result.duration || DEFAULT_TIMER_DURATION;
+                    startTimer(duration * 60);
+                });
+            }
+            break;
     }
-    return true;
+    return true; // Keep the message channel open
 });
 
 function startTimer(duration) {
@@ -213,16 +222,6 @@ async function removeTimerDisplay(tabId) {
         return response;
     } catch (error) {
         console.error('Error removing timer display:', error);
-    }
-}
-
-// Helper function to check if a tab is ready for messaging
-async function isTabReady(tabId) {
-    try {
-        const response = await chrome.tabs.sendMessage(tabId, { action: 'ping' });
-        return response?.status === 'ready';
-    } catch (error) {
-        return false;
     }
 }
 
