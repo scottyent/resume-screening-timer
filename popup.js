@@ -23,17 +23,33 @@ function showDurationStatus() {
     }, 2000);
 }
 
-// Initialize duration input with current stored value
+// Initialize duration inputs with current stored values
 chrome.storage.local.get(['duration'], (result) => {
-    const duration = result.duration || 5;
-    document.getElementById('timerDuration').value = duration;
+    const totalSeconds = (result.duration || 5) * 60;
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    document.getElementById('timerMinutes').value = minutes;
+    document.getElementById('timerSeconds').value = seconds;
 });
 
 document.getElementById('setDuration').addEventListener('click', () => {
-    const duration = parseInt(document.getElementById('timerDuration').value);
-    if (duration > 0) {
-        chrome.storage.local.set({ duration: duration }, () => {
+    const minutes = parseInt(document.getElementById('timerMinutes').value) || 0;
+    const seconds = parseInt(document.getElementById('timerSeconds').value) || 0;
+    const totalSeconds = (minutes * 60) + seconds;
+    
+    if (totalSeconds > 0) {
+        // Store duration in minutes for backward compatibility
+        const durationInMinutes = totalSeconds / 60;
+        chrome.storage.local.set({ 
+            duration: durationInMinutes,
+            seconds: seconds  // Store seconds separately for restoration
+        }, () => {
             showDurationStatus();
+            chrome.runtime.sendMessage({ 
+                action: 'setTimerDuration',
+                duration: durationInMinutes,
+                totalSeconds: totalSeconds
+            });
         });
     }
 });
@@ -52,6 +68,17 @@ document.getElementById('reset').addEventListener('click', () => {
 
 document.getElementById('stop').addEventListener('click', () => {
     chrome.runtime.sendMessage({ action: 'stop' });
+});
+
+// Validate seconds input to be between 0 and 59
+document.getElementById('timerSeconds').addEventListener('input', (e) => {
+    let value = parseInt(e.target.value);
+    if (value > 59) {
+        e.target.value = '59';
+    }
+    if (value < 0) {
+        e.target.value = '0';
+    }
 });
 
 updateTimeLeft();

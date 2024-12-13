@@ -26,8 +26,12 @@
             align-items: center;
         }
         .input-group input {
-            width: 60px;
+            width: 50px;
             padding: 4px;
+        }
+        .input-label {
+            font-size: 0.8em;
+            color: #666;
         }
         .button-group {
             display: flex;
@@ -54,7 +58,14 @@
             Time Left: <span id="timeLeftDisplay">0:00</span>
         </div>
         <div class="input-group">
-            <input type="number" id="timerDuration" min="1" value="5" placeholder="Minutes">
+            <div>
+                <input type="number" id="timerMinutes" min="0" value="5" placeholder="Min">
+                <div class="input-label">Minutes</div>
+            </div>
+            <div>
+                <input type="number" id="timerSeconds" min="0" max="59" value="0" placeholder="Sec">
+                <div class="input-label">Seconds</div>
+            </div>
             <button id="setDuration">Set</button>
         </div>
         <div id="durationStatus">Duration updated!</div>
