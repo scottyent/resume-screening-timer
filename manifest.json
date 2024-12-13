@@ -22,8 +22,7 @@
         "service_worker": "background.js"
     },
     "host_permissions": [
-        "https://*/*",
-        "http://*/*"
+        "*://*.greenhouse.io/*"
     ],
     "web_accessible_resources": [{
         "resources": [
@@ -31,13 +30,12 @@
             "chime.mp3"
         ],
         "matches": [
-            "https://*/*",
-            "http://*/*"
+            "*://*.greenhouse.io/*"
         ]
     }],
     "content_scripts": [
         {
-            "matches": ["https://*/*", "http://*/*"],
+            "matches": ["*://*.greenhouse.io/*"],
             "js": ["timerDisplay.js"],
             "css": ["timerDisplay.css"]
         }
