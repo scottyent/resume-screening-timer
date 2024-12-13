@@ -26,6 +26,13 @@
     animation: pulse 1s infinite;
 }
 
+/* When timer has reached zero */
+#url-timer-display.zero {
+    background-color: rgba(220, 53, 69, 1);
+    animation: pulse 1.5s infinite;
+    font-weight: 900;
+}
+
 @keyframes pulse {
     0% {
         transform: scale(1);

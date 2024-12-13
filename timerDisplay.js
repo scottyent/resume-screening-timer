@@ -1,6 +1,7 @@
 // timerDisplay.js
 let timerElement = null;
 let profileObserver = null;
+let isTimerAtZero = false;
 
 function createTimerDisplay() {
     if (!timerElement) {
@@ -34,16 +35,22 @@ function updateDisplay(remainingSeconds) {
     const seconds = remainingSeconds % 60;
     timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
 
-    // Add urgent class when less than 1 minute remains
-    if (remainingSeconds < 60) {
-        timerElement.classList.add('urgent');
-    } else {
+    // Handle different timer states
+    if (remainingSeconds <= 0) {
+        isTimerAtZero = true;
         timerElement.classList.remove('urgent');
+        timerElement.classList.add('zero');
+    } else if (remainingSeconds < 60) {
+        timerElement.classList.add('urgent');
+        timerElement.classList.remove('zero');
+    } else {
+        timerElement.classList.remove('urgent', 'zero');
     }
 }
 
 function removeDisplay() {
-    if (timerElement && timerElement.parentNode) {
+    // Only remove the display if we're not at zero
+    if (!isTimerAtZero && timerElement && timerElement.parentNode) {
         timerElement.parentNode.removeChild(timerElement);
         timerElement = null;
     }
@@ -52,6 +59,14 @@ function removeDisplay() {
 // Function to check if we're on the correct Greenhouse page
 function isCorrectGreenhousePage() {
     return window.location.href.includes('greenhouse.io/applications/review/app_review?');
+}
+
+// Reset timer state when navigating to a new application
+function resetTimerState() {
+    isTimerAtZero = false;
+    if (timerElement) {
+        timerElement.classList.remove('urgent', 'zero');
+    }
 }
 
 // Initialize when the script loads
@@ -68,6 +83,7 @@ new MutationObserver(() => {
     if (url !== lastUrl) {
         lastUrl = url;
         if (isCorrectGreenhousePage()) {
+            resetTimerState();
             createTimerDisplay();
         } else {
             removeDisplay();
