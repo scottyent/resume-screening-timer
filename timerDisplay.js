@@ -40,7 +40,7 @@ function updateDisplay(remainingSeconds) {
         isTimerAtZero = true;
         timerElement.classList.remove('urgent');
         timerElement.classList.add('zero');
-    } else if (remainingSeconds < 60) {
+    } else if (remainingSeconds <= 10) {  // Changed from 60 to 10 seconds
         timerElement.classList.add('urgent');
         timerElement.classList.remove('zero');
     } else {
